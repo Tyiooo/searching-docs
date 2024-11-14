@@ -61,7 +61,6 @@ class SearchEngine():
         results_df = results_df.loc[score > 0]
         results_df = results_df.iloc[np.argsort(-results_df['ranking_score'].values)]
         results_df = results_df.head(max_rows)
-        self.print_results(results_df, query)
         return results_df
 
     def get_score(self, query):
@@ -69,11 +68,5 @@ class SearchEngine():
         query_tfidf = self.transformer.transform(query_vectorised)
         cosine_similarities = linear_kernel(self.fitted_tfidf, query_tfidf).flatten()
         return cosine_similarities
-
-    def print_results(self, df, query):
-        print("---------------------------------------------------------------------------------------")
-        print(f'results for "{query}"\n')
-        for i, row in df.head().iterrows():
-            print(f'{i} {row['ranking_score']}\n {row[self.id_column]}\n {row[self.text_column]}\n')
 
 

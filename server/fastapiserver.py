@@ -1,13 +1,19 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, HTTPException, Form, File, Query
 import uvicorn
 import pandas as pd
 from model.search_engine import SearchEngine
+from typing import Optional
+
 
 app = FastAPI()
 
 
-@app.post("/search-news")
-async def search_news_in_file(query: str = Form(...), file: UploadFile = File(...)):
+model: Optional[SearchEngine] = None
+
+
+@app.post("/initiate-news")
+def initiate_news(id_column: str = Form(...), text_column: str = Form(...), file: UploadFile = File(...)):
+    global model
     if file is None:
         raise HTTPException(status_code=400, detail="Файл не был загружен.")
 
@@ -16,14 +22,17 @@ async def search_news_in_file(query: str = Form(...), file: UploadFile = File(..
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Ошибка чтения файла CSV: {e}")
 
-    if 'text' not in df.columns or 'labels' not in df.columns:
-        raise HTTPException(status_code=400, detail="CSV файл должен содержать столбцы 'text' и 'labels'.")
+    model = SearchEngine(text_column=text_column, id_column=id_column)
+    model.fit(df, perform_stem=False)
+    return {"message": "Документ инициализирован успешно"}
 
+
+@app.get("/search-news")
+def search_news(query: str = Query(...)):
+    if model is None:
+        raise HTTPException(status_code=400, detail="Документ не был инициализирован.")
     if not query:
         raise HTTPException(status_code=400, detail="Параметр 'query' не должен быть пустым.")
-
-    model = SearchEngine(text_column='text', id_column='labels')
-    model.fit(df, perform_stem=False)
 
     results = model.get_results(query)
     return {"results": results.to_dict(orient='records')}
