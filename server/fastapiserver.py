@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, HTTPException, Form, File, Query
+from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import pandas as pd
 from model.search_engine import SearchEngine
@@ -7,6 +8,13 @@ from typing import Optional
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 model: Optional[SearchEngine] = None
 
